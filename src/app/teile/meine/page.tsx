@@ -4,7 +4,7 @@ import { currentUser } from "@/lib/server/auth";
 import { OwnedItems } from "@/components/owned-items";
 export const dynamic = "force-dynamic";
 export const metadata = {
-  title: "Meine Teilebörse",
+  title: "Mein PARTVIVO",
   robots: { index: false, follow: false },
 };
 export default async function Management() {

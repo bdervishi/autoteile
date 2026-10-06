@@ -20,7 +20,7 @@ export default async function Admin() {
       <main id="main" className="container admin-page">
         <div className="admin-heading">
           <div>
-            <p className="eyebrow">TEILEBÖRSE · VERWALTUNG</p>
+            <p className="eyebrow">PARTVIVO · VERWALTUNG</p>
             <h1>Alles im Blick.</h1>
             <p>Der zentrale Arbeitsbereich für deinen Marktplatz.</p>
           </div>
@@ -80,7 +80,7 @@ export default async function Admin() {
     <main id="main" className="container">
       <div className="admin-heading">
         <div>
-          <p className="eyebrow">TEILEBÖRSE · VERWALTUNG</p>
+          <p className="eyebrow">PARTVIVO · VERWALTUNG</p>
           <h1>Alles im Blick.</h1>
           <p>
             Angemeldet als{" "}

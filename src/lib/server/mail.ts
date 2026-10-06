@@ -13,7 +13,7 @@ export function mailConfigured() {
   );
 }
 export function mailLayout(subject: string, body: string) {
-  return `<html lang="de-CH"><body style="font:16px/1.6 Arial;color:#20252a"><main style="max-width:600px;margin:auto;padding:32px"><p style="color:#ee5b27;font-weight:bold">${escapeHtml(BRAND_NAME)}</p><h1 style="font-size:24px">${escapeHtml(subject)}</h1><p style="white-space:pre-line">${escapeHtml(body)}</p><hr><p style="font-size:12px;color:#697078">Deine E-Mail-Adresse bleibt verborgen. Bei einer Anfrage kannst du direkt auf diese Mail antworten: Deine Antwort erscheint im Anfrage-Verlauf.</p></main></body></html>`;
+  return `<html lang="de-CH"><body style="font:16px/1.6 Arial;color:#20252a"><main style="max-width:600px;margin:auto;padding:32px"><p><img src="${escapeHtml(process.env.APP_ORIGIN || "https://autoteile.vercel.app")}/brand/partvivo-logo.png" width="220" alt="${escapeHtml(BRAND_NAME)}" style="display:block;max-width:100%;height:auto" /></p><h1 style="font-size:24px">${escapeHtml(subject)}</h1><p style="white-space:pre-line">${escapeHtml(body)}</p><hr><p style="font-size:12px;color:#697078">Deine E-Mail-Adresse bleibt verborgen. Bei einer Anfrage kannst du direkt auf diese Mail antworten: Deine Antwort erscheint im Anfrage-Verlauf.</p></main></body></html>`;
 }
 export async function sendMail(message: {
   recipient: string;

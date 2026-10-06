@@ -15,7 +15,7 @@ export const metadata: Metadata = {
         url: "/landing/garage.webp",
         width: 1536,
         height: 1024,
-        alt: "Teilebörse · Autoteile in der Schweiz",
+        alt: "PARTVIVO · Autoteile in der Schweiz",
       },
     ],
   },
@@ -29,7 +29,7 @@ export const metadata: Metadata = {
     index: process.env.BRAND_DOMAIN?.endsWith(".example") === false,
     follow: true,
   },
-  icons: { icon: "/favicon.svg" },
+  icons: { icon: "/favicon.svg", apple: "/apple-touch-icon.png" },
 };
 export default function Layout({ children }: { children: React.ReactNode }) {
   return (

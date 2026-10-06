@@ -59,7 +59,7 @@ export default function Home() {
             </p>
             <div className="hero-actions">
               <Link href="/teile" className="button primary">
-                Zur Teilebörse
+                Zu PARTVIVO
               </Link>
               <Link href="/teile/neu" className="button">
                 Teil inserieren
@@ -307,7 +307,7 @@ export default function Home() {
           </h2>
           <div className="inline-links">
             <Link href="/teile" className="button primary">
-              Zur Teilebörse
+              Zu PARTVIVO
             </Link>
             <Link href="/teile/neu" className="button">
               Teil inserieren

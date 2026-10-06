@@ -12,7 +12,7 @@ export default async function GuestManagement({
   const { token } = await params;
   return (
     <main id="main" className="container narrow">
-      <h1>Deine Teilebörse.</h1>
+      <h1>Dein PARTVIVO.</h1>
       <OwnedItems token={token} />
     </main>
   );

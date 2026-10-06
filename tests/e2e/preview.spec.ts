@@ -16,7 +16,7 @@ test("landing has working calls to action and no horizontal overflow", async ({
     ),
   ).toBe(true);
   await page
-    .getByRole("link", { name: "Zur Teilebörse", exact: true })
+    .getByRole("link", { name: "Zu PARTVIVO", exact: true })
     .first()
     .click();
   await expect(

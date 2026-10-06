@@ -1,12 +1,17 @@
 import Link from "next/link";
-import { Plus, UserRound, Disc3 } from "lucide-react";
+import { Plus, UserRound } from "lucide-react";
 import { BRAND_NAME } from "@/lib/constants";
 export function Header() {
   return (
     <header className="site-header">
       <Link href="/" className="brand">
-        <Disc3 size={29} />
-        {BRAND_NAME}
+        <img
+          className="brand-logo"
+          src="/brand/partvivo-logo.svg"
+          width="180"
+          height="39"
+          alt={BRAND_NAME}
+        />
         <small>CH</small>
       </Link>
       <nav aria-label="Hauptnavigation">
@@ -34,8 +39,13 @@ export function Footer() {
     <footer className="site-footer">
       <div>
         <Link href="/" className="brand">
-          <Disc3 />
-          {BRAND_NAME}
+          <img
+            className="brand-logo"
+            src="/brand/partvivo-logo.svg"
+            width="180"
+            height="39"
+            alt={BRAND_NAME}
+          />
         </Link>
         <p>Gute Teile verdienen eine zweite Runde.</p>
       </div>

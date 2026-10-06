@@ -1,4 +1,4 @@
-export const BRAND_NAME = process.env.BRAND_NAME || "Teilebörse";
+export const BRAND_NAME = process.env.BRAND_NAME || "PARTVIVO";
 export const BRAND_DOMAIN = process.env.BRAND_DOMAIN || "teileboerse.example";
 export const CATEGORIES = [
   "reifen",

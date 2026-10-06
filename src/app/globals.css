@@ -1931,3 +1931,14 @@ html:not(.sc-ready) .landing-page [data-sc-cue] {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+
+.brand-logo {
+  display: block;
+  width: 180px;
+  height: auto;
+}
+@media (max-width: 600px) {
+  .site-header .brand-logo {
+    width: 124px;
+  }
+}
