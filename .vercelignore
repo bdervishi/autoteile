@@ -1,0 +1,8 @@
+scrollcraft/
+.agents/
+landing-vorlage/
+docs/
+test-results/
+playwright-report/
+.git/
+.env*
