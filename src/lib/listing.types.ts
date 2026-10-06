@@ -1,0 +1,43 @@
+import type { CATEGORIES, CONDITIONS, OFFERS } from "./constants";
+export type Fit = {
+  make: string;
+  model: string;
+  year_from: number;
+  year_to: number;
+  engine?: string;
+};
+export type PublicItem = {
+  id: string;
+  title: string;
+  description: string;
+  category: (typeof CATEGORIES)[number];
+  condition: (typeof CONDITIONS)[number];
+  offer_type: (typeof OFFERS)[number];
+  price_chf: number | null;
+  photos: string[];
+  fits: Fit[];
+  fits_note: string;
+  manufacturer: string;
+  oem_number: string;
+  pickup_zip: string;
+  pickup_canton: string;
+  shipping_possible: boolean;
+  negotiable: boolean;
+  swap_for: string;
+  status: string;
+  created_at: string;
+  seller_name: string;
+  business_slug: string | null;
+  business_name: string | null;
+  payment_mode: string | null;
+  tire_width: number | null;
+  tire_ratio: number | null;
+  rim_diameter: number | null;
+  tire_season: string | null;
+  tread_mm: number | null;
+  rim_bolt_pattern: string | null;
+  rim_offset_et: number | null;
+  quantity: number;
+};
+export type Result<T = Record<string, never>> =
+  { ok: true; data: T } | { ok: false; error: string };

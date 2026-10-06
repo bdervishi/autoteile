@@ -1,0 +1,14 @@
+node_modules/
+.next/
+.env*
+!.env.example
+playwright-report/
+test-results/
+*.tsbuildinfo
+.DS_Store
+
+# Local visual QA captures and provider CLI state
+scrollcraft/builds/*/lab/
+.vercel/
+supabase/.temp/
+supabase/.branches/

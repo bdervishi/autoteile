@@ -1,0 +1,654 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Amigoal Tauschbörse · Zu klein. Passt genau.</title>
+<meta name="description" content="Trikots, Schuhe und Schienbeinschoner tauschen, verschenken, spenden oder verkaufen. Im eigenen Verein oder schweizweit.">
+<link rel="canonical" href="https://amigoal.ch/de/entdecken/tausch">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://amigoal.ch/de/entdecken/tausch">
+<meta property="og:title" content="Amigoal Tauschbörse · Zu klein. Passt genau.">
+<meta property="og:description" content="Trikots, Schuhe und Schienbeinschoner tauschen, verschenken, spenden oder verkaufen. Im eigenen Verein oder schweizweit.">
+<meta property="og:image" content="https://amigoal.ch/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/landing/tausch/scrollcraft.css">
+<style>
+  :root {
+    --sc-canvas:     #F3F4EF;
+    --sc-surface:    #FFFFFF;
+    --sc-ink:        #0E1A13;
+    --sc-ink-soft:   #46544B;
+    --sc-accent:     #1A7A3D;
+    --sc-accent-ink: #FFFFFF;
+    --sc-font-display: "Archivo", system-ui, sans-serif;
+    --sc-font-text:    "Geist", system-ui, sans-serif;
+    --sc-font-mono:    "Geist Mono", ui-monospace, monospace;
+    --sc-shadow-color: 150 25% 18%;
+    --ground-r: #E3EDE1;        /* "Passt genau": pale grass, the second ground */
+    --split: 0.5;               /* divider position, 0..1 of the viewport. JS owns it. */
+    --k: 0;                     /* collapse progress, 0..1 */
+    --band: 17.5vw;               /* clear band either side of the divider for the travelling objects */
+  }
+  body { background: var(--sc-canvas); color: var(--sc-ink); }
+  h1, h2, h3 { font-family: var(--sc-font-display); text-wrap: balance; }
+  p { text-wrap: pretty; }
+  :focus-visible { outline: 2px solid var(--sc-accent); outline-offset: 3px; border-radius: 4px; }
+
+  /* ---------- The two grounds. They hold the whole page. ---------- */
+  .grounds { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
+  .grounds i { position: absolute; top: 0; bottom: 0; }
+  .g-l { left: 0; width: calc(var(--split) * 100%); background: var(--sc-canvas); }
+  .g-r { right: 0; left: calc(var(--split) * 100%); background: var(--ground-r); }
+
+  main { position: relative; z-index: 2; }
+
+  /* ---------- Brand + actions (no bar) ---------- */
+  .brand {
+    position: fixed; z-index: var(--sc-z-chrome); top: var(--sc-4); left: var(--sc-gutter);
+    display: inline-flex; align-items: center; gap: 0.55rem;
+    font-family: var(--sc-font-display); font-weight: 800; font-size: 1.3rem; letter-spacing: -0.03em;
+    color: var(--sc-ink); text-decoration: none;
+    padding: 0.3rem 0.7rem 0.3rem 0.4rem; margin-left: -0.4rem; border-radius: var(--sc-r-sm);
+    background: color-mix(in oklab, var(--sc-canvas) 88%, transparent); backdrop-filter: blur(8px);
+  }
+  .brand img { width: 2.3rem; height: 2.3rem; display: block; }
+  .brand span { color: var(--sc-accent); }
+
+  .actions { position: fixed; z-index: var(--sc-z-chrome); top: var(--sc-4); right: var(--sc-gutter); display: flex; gap: var(--sc-2); align-items: center; }
+  .pill {
+    display: inline-flex; align-items: center; gap: 0.45em; height: 2.6rem; padding: 0 1.05rem; border-radius: var(--sc-r-sm);
+    font: 600 var(--sc-t-sm)/1 var(--sc-font-text); text-decoration: none; cursor: pointer; white-space: nowrap;
+    background: color-mix(in oklab, var(--sc-surface) 92%, transparent); color: var(--sc-ink); border: 1px solid var(--sc-hairline);
+    box-shadow: var(--sc-e1); backdrop-filter: blur(8px);
+    transition: background-color 160ms var(--sc-ease-out), transform 120ms var(--sc-ease-out);
+  }
+  .pill:hover { background: var(--sc-surface); }
+  .pill:active { transform: scale(0.97); }
+  .pill--solid { background: var(--sc-ink); color: var(--sc-canvas); border-color: var(--sc-ink); }
+  .pill--solid:hover { background: color-mix(in oklab, var(--sc-ink) 86%, white); }
+  .pill svg { width: 1rem; height: 1rem; flex: none; }
+  .menu {
+    position: fixed; z-index: calc(var(--sc-z-chrome) + 1); top: calc(var(--sc-4) + 3.1rem); right: var(--sc-gutter);
+    width: min(34rem, calc(100vw - 2 * var(--sc-gutter))); max-height: calc(100svh - 6rem); overflow: auto;
+    background: var(--sc-surface); border-radius: var(--sc-r-md); box-shadow: var(--sc-e3); border: 1px solid var(--sc-hairline);
+    padding: var(--sc-5); display: grid; grid-template-columns: 1fr 1fr; gap: var(--sc-5);
+    opacity: 0; transform: translateY(-6px) scale(0.98); transform-origin: top right; pointer-events: none;
+    transition: opacity 180ms var(--sc-ease-out), transform 220ms var(--sc-ease-out);
+  }
+  .menu.is-open { opacity: 1; transform: none; pointer-events: auto; }
+  .menu ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; align-content: start; }
+  .menu li:first-child { font: 500 var(--sc-t-xs)/1.4 var(--sc-font-mono); text-transform: uppercase; letter-spacing: 0.08em; color: var(--sc-ink-soft); padding: 0 0.6rem 0.4rem; }
+  .menu a { display: block; padding: 0.5rem 0.6rem; border-radius: var(--sc-r-sm); color: var(--sc-ink); text-decoration: none; font-weight: 500; }
+  .menu a small { display: block; font-weight: 400; color: var(--sc-ink-soft); font-size: var(--sc-t-xs); }
+  .menu a[aria-current] { background: color-mix(in oklab, var(--sc-accent) 10%, transparent); }
+  .menu a:hover { background: color-mix(in oklab, var(--sc-ink) 5%, transparent); }
+
+  /* ---------- The divider IS the chrome ---------- */
+  .divider { position: fixed; z-index: 40; top: 0; bottom: 0; left: calc(var(--split) * 100vw); width: 0; pointer-events: none; }
+  .divider__line { position: absolute; top: 0; bottom: 0; left: -0.5px; width: 1px; background: var(--sc-hairline-strong); }
+  .divider__fill { position: absolute; top: 0; left: -1px; width: 3px; height: 100%; background: var(--sc-accent); transform-origin: top; transform: scaleY(var(--fill, 0)); }
+  .divider__labels { position: absolute; top: calc(var(--sc-4) + 0.55rem); left: 0; }
+  .divider__labels span {
+    position: absolute; top: 0; white-space: nowrap;
+    font: 500 var(--sc-t-xs)/1 var(--sc-font-mono); text-transform: uppercase; letter-spacing: 0.1em;
+    padding: 0.5rem 0.7rem; border-radius: var(--sc-r-sm);
+  }
+  .lab-l { right: 0.75rem; background: var(--sc-canvas); color: var(--sc-ink-soft); opacity: calc(1 - var(--k) * 2.2); }
+  .lab-r { left: 0.75rem; background: var(--sc-accent); color: var(--sc-accent-ink); opacity: calc(1 - (var(--k) - 0.55) * 3); }
+  .notches { list-style: none; margin: 0; padding: 0; }
+  .notch { position: absolute; left: 0; top: calc(var(--y) * 100vh); pointer-events: auto; opacity: calc(1 - var(--k) * 2.5); }
+  .notch a {
+    position: absolute; top: -0.8rem; display: flex; align-items: center; gap: 0.5rem; height: 1.6rem;
+    font: 500 var(--sc-t-xs)/1 var(--sc-font-mono); color: var(--sc-ink-soft); text-decoration: none; white-space: nowrap;
+    left: 0; transform: translateX(-0.45rem); transition: color 160ms var(--sc-ease-out);
+  }
+  .notch a:hover { color: var(--sc-ink); }
+  .notch .d { width: 0.9rem; height: 0.9rem; border-radius: 50%; background: var(--sc-surface); border: 1.5px solid var(--sc-ink-soft); flex: none; transition: background-color 200ms var(--sc-ease-out), border-color 200ms var(--sc-ease-out); }
+  .notch .t { position: absolute; left: 1.35rem; transition: transform 260ms var(--sc-ease-out); }
+  .notch:not(.is-over) .t { transform: translateX(calc(-100% - 2.3rem)); }
+  .notch.is-over a { color: var(--sc-ink); }
+  .notch.is-over .d { background: var(--sc-accent); border-color: var(--sc-accent); }
+
+  /* ---------- Signature: objects cross the divider ---------- */
+  .objects { position: fixed; inset: 0; z-index: 30; pointer-events: none; }
+  .obj { position: absolute; left: 0; top: 0; will-change: transform; filter: drop-shadow(0 14px 14px hsl(150 25% 18% / 0.18)) drop-shadow(0 2px 3px hsl(150 25% 18% / 0.16)); }
+  .obj img { display: block; width: 100%; height: auto; max-width: none; }
+  .obj--boots  { width: min(12vw, 13.5rem); }
+  .obj--jersey { width: min(8.4vw, 9.5rem); }
+  .obj--guards { width: min(6.6vw, 7.4rem); }
+
+  /* Mobile track (hidden on desktop) */
+  .track { display: none; }
+
+  /* ---------- Shared type ---------- */
+  .tag { font: 500 var(--sc-t-xs)/1.2 var(--sc-font-mono); text-transform: uppercase; letter-spacing: 0.1em; color: var(--sc-ink-soft); margin: 0 0 var(--sc-4); }
+  .half--r .tag { color: #1A5E33; }
+  .h2 { font-size: var(--sc-t-2xl); line-height: 1.02; letter-spacing: -0.035em; font-weight: 800; margin: 0 0 var(--sc-5); }
+  .lead { font-size: var(--sc-t-lg); line-height: 1.45; margin: 0 0 var(--sc-6); max-width: 30ch; }
+  .body { color: var(--sc-ink-soft); max-width: 44ch; margin: 0; line-height: 1.6; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 0.5em; white-space: nowrap;
+    padding: 0.9rem 1.4rem; border-radius: var(--sc-r-sm);
+    font-family: var(--sc-font-text); font-weight: 600; font-size: var(--sc-t-base); text-decoration: none;
+    background: var(--sc-accent); color: var(--sc-accent-ink); box-shadow: var(--sc-e2), inset 0 1px 0 rgb(255 255 255 / 0.18);
+    transition: background-color 160ms var(--sc-ease-out), transform 120ms var(--sc-ease-out);
+  }
+  .btn:hover { background: color-mix(in oklab, var(--sc-accent) 86%, black); }
+  .btn:active { transform: scale(0.97); }
+  .link { color: var(--sc-ink); font-weight: 500; text-decoration: underline; text-underline-offset: 0.25em; text-decoration-thickness: 1px; }
+  .link:hover { color: var(--sc-accent); }
+
+  /* Two-column sections: the band next to the divider stays clear for the objects */
+  .split { display: grid; grid-template-columns: 1fr 1fr; }
+  .half { padding-block: var(--sc-10); }
+  .half--l { padding-left: var(--sc-gutter); padding-right: var(--band); }
+  .half--r { padding-left: var(--band); padding-right: var(--sc-gutter); }
+
+  /* Label schedule (Waschzettel): fact rows with hairlines */
+  .rows { list-style: none; margin: var(--sc-6) 0 0; padding: 0; border-top: 1px solid var(--sc-hairline-strong); max-width: 32rem; }
+  .rows li { display: grid; grid-template-columns: 8.5rem 1fr; gap: var(--sc-4); padding: var(--sc-4) 0; border-bottom: 1px solid var(--sc-hairline); }
+  .rows b { font-weight: 600; }
+  .rows span { color: var(--sc-ink-soft); }
+  .rows code { font: 500 0.92em/1 var(--sc-font-mono); color: var(--sc-ink); }
+
+  /* ---------- 1 · Hero ---------- */
+  .hero [data-sc-stage] { overflow: hidden; }
+  .hero { --p: var(--sc-p, 0); }
+  .plate { position: absolute; top: 0; bottom: 0; margin: 0; overflow: hidden; }
+  .plate img { position: absolute; inset: -3% -3%; width: 106%; height: 106%; max-width: none; object-fit: cover; display: block; will-change: transform; }
+  .plate--l { left: 0; width: 50%; }
+  .plate--l img { object-position: 70% 58%; transform-origin: 30% 70%; transform: translate3d(calc(var(--p) * -1.5vw + var(--mx, 0) * -6px), calc(var(--my, 0) * -4px), 0) scale(calc(1 + var(--p) * 0.06)); }
+  .plate--r { right: 0; width: 50%; }
+  .plate--r img { object-position: 40% 62%; transform-origin: 60% 80%; transform: translate3d(calc(var(--p) * 1.5vw + var(--mx, 0) * -6px), calc(var(--my, 0) * -4px), 0) scale(calc(1 + var(--p) * 0.06)); }
+  .plate--l::after { /* white wall wash behind the sub-copy only */
+    content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 46%;
+    background: linear-gradient(to top, rgb(243 244 239 / 0.94) 35%, rgb(243 244 239 / 0)); }
+  .hero h1 { margin: 0; font-weight: 800; letter-spacing: -0.05em; line-height: 0.92; font-size: clamp(3.2rem, 1rem + 5.4vw, 7rem); }
+  .hero h1 span { position: absolute; top: clamp(6.5rem, 17svh, 10rem); white-space: nowrap; transform: translate3d(0, calc(var(--p) * -5svh), 0); }
+  .h-l { left: var(--sc-gutter); color: var(--sc-ink); }
+  .h-r { left: calc(50% + var(--sc-gutter)); color: #0B2A17; }
+  .h-r em { font-style: normal; color: var(--sc-accent); }
+  .hero-sub { position: absolute; left: var(--sc-gutter); bottom: clamp(2.5rem, 8svh, 5rem); width: min(26rem, calc(50% - var(--band) - var(--sc-gutter) + 6rem)); margin: 0; font-size: var(--sc-t-lg); line-height: 1.45; }
+  .hero-cta { position: absolute; left: calc(50% + var(--band)); bottom: clamp(2.5rem, 8svh, 5rem); display: grid; gap: var(--sc-3); justify-items: start; }
+  .hero-cta small { font-size: var(--sc-t-sm); color: #0E1A13; background: rgb(255 255 255 / 0.86); padding: 0.3rem 0.6rem; border-radius: var(--sc-r-sm); }
+
+  /* ---------- 3 · offer types, wiped in per side ---------- */
+  .ways .half { padding-top: var(--sc-9); }
+  .ways ol { list-style: none; margin: var(--sc-5) 0 0; padding: 0; max-width: 32rem; }
+  .ways li { padding: var(--sc-5) 0; border-top: 1px solid var(--sc-hairline-strong); display: grid; grid-template-columns: 2.4rem 1fr; gap: var(--sc-3); }
+  .ways li:last-child { border-bottom: 1px solid var(--sc-hairline-strong); }
+  .ways .n { font: 500 var(--sc-t-sm)/1.5 var(--sc-font-mono); color: var(--sc-ink-soft); }
+  .ways h3 { margin: 0 0 var(--sc-1); font-size: var(--sc-t-xl); letter-spacing: -0.025em; line-height: 1.1; }
+  .ways p { margin: 0; color: var(--sc-ink-soft); }
+  .ways .sub { font-size: var(--sc-t-lg); margin: 0; max-width: 28ch; }
+
+  /* ---------- 4 · Verein / schweizweit (pinned) ---------- */
+  .reach [data-sc-stage] { display: grid; grid-template-columns: 1fr 1fr; align-items: center; }
+  .reach .half { padding-block: 0; }
+  .form {
+    background: var(--sc-surface); border-radius: var(--sc-r-md); box-shadow: var(--sc-e2); border: 1px solid var(--sc-hairline);
+    padding: var(--sc-5); max-width: 30rem; margin-top: var(--sc-5);
+  }
+  .form__head { display: flex; justify-content: space-between; gap: var(--sc-3); font: 500 var(--sc-t-xs)/1.3 var(--sc-font-mono); color: var(--sc-ink-soft); text-transform: uppercase; letter-spacing: 0.06em; padding-bottom: var(--sc-3); border-bottom: 1px solid var(--sc-hairline); }
+  .form__head em { font-style: normal; color: #1A5E33; }
+  .check { display: grid; grid-template-columns: 1.4rem 1fr; gap: var(--sc-3); padding: var(--sc-4); margin-top: var(--sc-4); border-radius: var(--sc-r-sm); background: #EEF5ED; border: 1px solid #C9DEC8; }
+  .check input { appearance: none; margin: 0.15rem 0 0; width: 1.25rem; height: 1.25rem; border-radius: 4px; border: 1.5px solid var(--sc-ink-soft); background: var(--sc-surface); display: grid; place-items: center; transition: background-color 200ms var(--sc-ease-out), border-color 200ms var(--sc-ease-out); }
+  .check input::after { content: ""; width: 0.36rem; height: 0.68rem; border: solid var(--sc-accent-ink); border-width: 0 2px 2px 0; transform: translateY(-1px) rotate(45deg) scale(0.4); opacity: 0; transition: opacity 160ms var(--sc-ease-out), transform 220ms var(--sc-ease-out); }
+  .check input:checked { background: var(--sc-accent); border-color: var(--sc-accent); }
+  .check input:checked::after { opacity: 1; transform: translateY(-1px) rotate(45deg) scale(1); }
+  .check b { display: block; font-weight: 600; color: #134F2A; }
+  .check span { display: block; font-size: var(--sc-t-sm); color: #2E5A3C; margin-top: 0.2rem; line-height: 1.45; }
+  .where { margin-top: var(--sc-5); }
+  .where p { margin: 0 0 var(--sc-3); font: 500 var(--sc-t-sm)/1.3 var(--sc-font-mono); color: var(--sc-ink); }
+  .cantons { display: grid; grid-template-columns: repeat(9, minmax(0, 1fr)); gap: 4px; max-width: 30rem; }
+  .cantons span { font: 500 0.72rem/1 var(--sc-font-mono); text-align: center; padding: 0.42rem 0; border-radius: 4px; background: rgb(255 255 255 / 0.55); color: var(--sc-ink-soft); transition: background-color 220ms var(--sc-ease-out), color 220ms var(--sc-ease-out); }
+  .cantons span.on { background: var(--sc-accent); color: var(--sc-accent-ink); }
+  .scope { margin-top: var(--sc-6); max-width: 30rem; }
+  .scope li { grid-template-columns: 7.5rem 1fr; }
+  .reach .half--l .body { transition: opacity 300ms var(--sc-ease-out); }
+
+  /* ---------- 5 · without a club ---------- */
+  .guest .half { padding-block: var(--sc-9) var(--sc-9); }
+  .embed { margin: var(--sc-6) 0 0; max-width: 30rem; border-radius: var(--sc-r-md); overflow: hidden; background: var(--sc-surface); box-shadow: var(--sc-e2); border: 1px solid var(--sc-hairline); }
+  .embed__bar { display: flex; gap: 6px; align-items: center; padding: 0.55rem 0.8rem; border-bottom: 1px solid var(--sc-hairline); font: 500 0.72rem/1 var(--sc-font-mono); color: var(--sc-ink-soft); }
+  .embed__bar i { width: 7px; height: 7px; border-radius: 50%; background: var(--sc-hairline-strong); }
+  .embed__bar span { margin-left: auto; }
+  .embed ul { list-style: none; margin: 0; padding: var(--sc-3) var(--sc-4) var(--sc-4); display: grid; gap: var(--sc-2); }
+  .embed li { display: grid; grid-template-columns: 3rem 1fr auto; gap: var(--sc-3); align-items: center; font-size: var(--sc-t-sm); }
+  .embed li img { width: 3rem; height: 3rem; object-fit: contain; background: var(--sc-canvas); border-radius: 6px; padding: 4px; }
+  .embed li small { display: block; color: var(--sc-ink-soft); font-size: var(--sc-t-xs); }
+  .embed li em { font-style: normal; font: 500 var(--sc-t-xs)/1 var(--sc-font-mono); color: #1A5E33; background: #E3EDE1; padding: 0.3rem 0.45rem; border-radius: 4px; }
+  .embed figcaption { padding: 0 var(--sc-4) var(--sc-3); font-size: var(--sc-t-xs); color: var(--sc-ink-soft); }
+
+  /* ---------- 6 · quiet ---------- */
+  .quiet .half { padding-block: 26svh 24svh; }
+  .quiet p { font-family: var(--sc-font-display); font-weight: 600; font-size: var(--sc-t-xl); letter-spacing: -0.02em; line-height: 1.25; margin: 0; }
+  .quiet .half--l p { text-align: right; }
+  .quiet small { display: block; margin-top: var(--sc-4); font-family: var(--sc-font-text); font-weight: 400; font-size: var(--sc-t-sm); letter-spacing: 0; color: var(--sc-ink-soft); max-width: 34ch; }
+
+  /* ---------- 7 · Close: the collapse ---------- */
+  .close [data-sc-stage] { overflow: hidden; }
+  .close figure { position: absolute; inset: 0; margin: 0; clip-path: inset(0 0 0 calc(var(--split) * 100%)); }
+  .close figure img { width: 100%; height: 100%; max-width: none; object-fit: cover; object-position: 60% 60%; display: block; transform: scale(calc(1.08 - var(--k) * 0.08)); transform-origin: 70% 70%; }
+  .left-over { position: absolute; left: var(--sc-gutter); bottom: clamp(3rem, 10svh, 6rem); width: calc(50vw - var(--band) - var(--sc-gutter)); margin: 0; font-size: var(--sc-t-lg); line-height: 1.45; color: var(--sc-ink-soft); opacity: calc(1 - var(--k) * 2.4); }
+  .close-copy { position: absolute; top: clamp(6rem, 15svh, 9rem); left: calc(var(--split) * 100vw + max(var(--sc-gutter), var(--band) * (1 - var(--k) * 1.4))); width: min(40rem, 86vw); }
+  .close-copy h2 { font-size: clamp(3rem, 1rem + 5vw, 6.4rem); line-height: 0.92; letter-spacing: -0.05em; font-weight: 800; margin: 0 0 var(--sc-5); color: #0B2A17; }
+  .close-copy h2 em { font-style: normal; color: var(--sc-accent); }
+  .close-copy p { margin: 0 0 var(--sc-6); font-size: var(--sc-t-lg); line-height: 1.45; max-width: 32ch; color: #0E1A13; }
+  .close-copy .more { display: flex; flex-wrap: wrap; gap: var(--sc-3) var(--sc-5); margin-top: var(--sc-5); }
+  .close-copy .more a { font-size: var(--sc-t-sm); background: rgb(255 255 255 / 0.88); padding: 0.35rem 0.6rem; border-radius: var(--sc-r-sm); }
+  .close-scrim { position: absolute; left: 0; top: 0; width: 100%; height: 72%; pointer-events: none;
+    background: linear-gradient(to bottom, rgb(227 237 225 / 0.9) 0%, rgb(227 237 225 / 0.82) 55%, rgb(227 237 225 / 0) 100%);
+    -webkit-mask-image: linear-gradient(to right, #000 0, #000 min(46rem, 70%), transparent min(62rem, 95%)); mask-image: linear-gradient(to right, #000 0, #000 min(46rem, 70%), transparent min(62rem, 95%));
+    clip-path: inset(0 0 0 calc(var(--split) * 100%)); }
+
+  .foot { position: relative; z-index: 2; padding: var(--sc-7) var(--sc-gutter) var(--sc-6); display: flex; flex-wrap: wrap; justify-content: space-between; gap: var(--sc-4); font-size: var(--sc-t-sm); color: var(--sc-ink-soft); border-top: 1px solid var(--sc-hairline); }
+  .foot nav { display: flex; gap: var(--sc-5); flex-wrap: wrap; }
+  .foot a { color: var(--sc-ink-soft); text-underline-offset: 0.2em; }
+  .foot a:hover { color: var(--sc-ink); }
+
+  /* ================= Phone art direction: the divider lies down ================= */
+  @media (max-width: 900px) {
+    :root { --band: var(--sc-gutter); }
+    .grounds, .divider, .objects { display: none; }
+    body { background: var(--sc-canvas); }
+    .brand { top: 0.7rem; left: var(--sc-4); font-size: 1.1rem; }
+    .brand img { width: 2rem; height: 2rem; }
+    .actions { top: 0.55rem; right: var(--sc-3); }
+    .actions .pill--login { display: none; }
+    .pill { height: 2.4rem; padding: 0 0.8rem; }
+    .menu { top: 3.4rem; right: var(--sc-3); grid-template-columns: 1fr; }
+    .menu li.m-login { display: list-item; }
+
+    /* the divider becomes a horizontal track under the brand row */
+    .track {
+      display: block; position: fixed; z-index: 45; left: var(--sc-3); right: var(--sc-3); top: 3.4rem; height: 2.4rem;
+      border-radius: var(--sc-r-sm); overflow: hidden; box-shadow: var(--sc-e1);
+      transform: translateY(calc(var(--k) * -5rem)); opacity: calc(1 - var(--k) * 1.3);
+    }
+    .track .tl, .track .tr { position: absolute; top: 0; bottom: 0; display: flex; align-items: center; font: 500 0.66rem/1 var(--sc-font-mono); text-transform: uppercase; letter-spacing: 0.08em; }
+    .track .tl { left: 0; width: 50%; background: var(--sc-surface); color: var(--sc-ink-soft); padding-left: 0.7rem; }
+    .track .tr { right: 0; width: 50%; background: var(--sc-accent); color: var(--sc-accent-ink); justify-content: flex-end; padding-right: 0.7rem; }
+    .track .tfill { position: absolute; left: 0; bottom: 0; height: 2px; width: 100%; background: var(--sc-ink); transform-origin: left; transform: scaleX(var(--fill, 0)); opacity: 0.5; }
+    .track img { position: absolute; left: 0; top: 50%; height: 1.45rem; width: auto; max-width: none; will-change: transform; filter: drop-shadow(0 2px 2px rgb(0 0 0 / 0.2)); }
+
+    .split, .reach [data-sc-stage] { grid-template-columns: 1fr; }
+    .half { padding-block: var(--sc-8); }
+    .half--l { padding-inline: var(--sc-gutter); background: var(--sc-canvas); }
+    .half--r { padding-inline: var(--sc-gutter); background: var(--ground-r); }
+    .rows li { grid-template-columns: 1fr; gap: var(--sc-1); }
+
+    /* hero: top half zu klein, bottom half passt genau */
+    .plate--l { left: 0; right: 0; width: auto; top: 0; bottom: 50%; }
+    .plate--r { left: 0; right: 0; width: auto; top: 50%; bottom: 0; }
+    .plate--l img { object-position: 55% 72%; }
+    .plate--r img { object-position: 30% 70%; }
+    .plate--l::after { height: 60%; }
+    .hero h1 { font-size: clamp(2.6rem, 12vw, 3.6rem); }
+    .h-l { top: 6.8rem !important; left: var(--sc-gutter); }
+    .h-r { top: calc(50% + 1.2rem) !important; left: var(--sc-gutter); }
+    .hero-sub { left: var(--sc-gutter); right: var(--sc-gutter); width: auto; bottom: calc(50% + 1rem); font-size: var(--sc-t-base); }
+    .hero-cta { left: var(--sc-gutter); bottom: 1.6rem; }
+
+    .reach { height: auto !important; }
+    .reach [data-sc-stage] { position: relative; height: auto; }
+    .reach .half { padding-block: var(--sc-8); }
+    .cantons { grid-template-columns: repeat(7, minmax(0, 1fr)); }
+
+    .quiet .half { padding-block: var(--sc-9); }
+    .quiet .half--l p { text-align: left; }
+
+    .close figure, .close-scrim { clip-path: inset(calc(var(--split) * 100%) 0 0 0); }
+    .close figure img { object-position: 74% 60%; }
+    .left-over { left: var(--sc-gutter); right: var(--sc-gutter); width: auto; top: 6.6rem; bottom: auto; font-size: var(--sc-t-base); }
+    .close-copy { left: var(--sc-gutter); right: var(--sc-gutter); width: auto; top: calc(var(--split) * 100svh + 5.6rem - var(--k) * 1rem); }
+    .close-copy { background: rgb(243 247 241 / 0.95); padding: var(--sc-5); border-radius: var(--sc-r-md); box-shadow: var(--sc-e2); left: var(--sc-3); right: var(--sc-3); }
+    .close-copy h2 { font-size: clamp(2.6rem, 12vw, 3.6rem); }
+    .close-copy p { font-size: var(--sc-t-base); }
+    .close-scrim { display: none; }
+    .hero h1 span { transform: none; }
+    @media (max-height: 700px) { .hero-sub { font-size: var(--sc-t-sm); } .hero h1 { font-size: clamp(2.3rem, 11vw, 3rem); } .h-l { top: 6.3rem !important; } }
+    .foot { background: var(--ground-r); }
+  }
+  @media (min-width: 901px) { .menu li.m-login { display: none; } }
+  @media (max-width: 380px) { .brand .wm { display: none; } }
+
+  @media (prefers-reduced-motion: reduce) {
+    .plate img, .hero h1 span, .close figure img { transform: none !important; }
+    .notch .t { transition: none; }
+  }
+</style>
+</head>
+<body>
+
+<a class="sc-visually-hidden" href="#main" style="position:absolute;left:-9999px">Zum Inhalt</a>
+
+<div class="grounds" aria-hidden="true"><i class="g-l"></i><i class="g-r"></i></div>
+
+<a class="brand" href="/de" aria-label="Amigoal Vorschau Startseite"><img src="/landing/tausch/assets/amigoal-logo.svg" alt="" width="40" height="40"><span class="wm">amigoal<span>.</span></span></a>
+
+<div class="actions">
+  <button class="pill" type="button" aria-expanded="false" aria-controls="menu" id="menu-btn">
+    <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 4.5h12M2 8h12M2 11.5h12" stroke="currentColor" stroke-width="1.6" fill="none"/></svg><span class="lbl">Menü</span>
+  </button>
+  <a class="pill pill--solid pill--login" href="/de/login">Login</a>
+</div>
+<nav class="menu" id="menu" aria-label="Schnellzugriff" hidden>
+  <ul>
+    <li>Rund um den Platz</li>
+    <li><a href="/de/entdecken/turniere">Turniere<small>Finden oder selbst organisieren</small></a></li>
+    <li><a href="/de/entdecken/trainingslager">Trainingslager<small>Camps für ganze Teams</small></a></li>
+    <li><a href="/de/entdecken/bootcamps">Bootcamps<small>Intensivtraining für Spieler</small></a></li>
+    <li><a href="/de/entdecken/tickets">Tickets<small>Für das nächste Spiel</small></a></li>
+    <li><a href="/de/entdecken/highlights">Highlights<small>Die besten Momente</small></a></li>
+    <li><a href="/de/entdecken/tausch" aria-current="page">Tauschbörse<small>Sportsachen tauschen und verschenken</small></a></li>
+    <li><a href="/de/uebungen">Übungen<small>50 Trainingsübungen mit animiertem Ablauf</small></a></li>
+  </ul>
+  <ul>
+    <li>Amigoal</li>
+    <li class="m-login"><a href="/de/login">Login<small>Verein, Partner, Admin</small></a></li>
+    <li><a href="/de/entdecken/vereinsfinder">Vereins-Finder<small>Einen Verein in der Nähe finden</small></a></li>
+    <li><a href="/de/entdecken/warteliste">Warteliste<small>Platz im Verein fürs Kind</small></a></li>
+    <li><a href="/de/entdecken/sponsoring">Sponsoring<small>Partner eines Vereins werden</small></a></li>
+    <li><a href="/de">Vereinssoftware<small>Mitglieder, Training, Spiele, Finanzen</small></a></li>
+    <li><a href="/de/pricing">Preise</a></li>
+    <li><a href="/de/faq">FAQ</a></li>
+    <li><a href="mailto:hello@amigoal.ch">Kontakt<small>hello@amigoal.ch</small></a></li>
+  </ul>
+</nav>
+
+<!-- The divider: labels for both sides, the argument's progress, and a stamp per object that made it across. -->
+<div class="divider" aria-label="Zu klein oder passt genau">
+  <div class="divider__line"></div>
+  <div class="divider__fill"></div>
+  <div class="divider__labels"><span class="lab-l">Zu klein</span><span class="lab-r">Passt genau</span></div>
+  <ol class="notches">
+    <li class="notch" style="--y:0.34" data-for="0"><a href="#schuhe"><i class="d"></i><span class="t">Schuhe</span></a></li>
+    <li class="notch" style="--y:0.54" data-for="1"><a href="#trikot"><i class="d"></i><span class="t">Trikot</span></a></li>
+    <li class="notch" style="--y:0.74" data-for="2"><a href="#schoner"><i class="d"></i><span class="t">Schoner</span></a></li>
+  </ol>
+</div>
+
+<div class="objects" aria-hidden="true" data-sc-verify-state="">
+  <div class="obj obj--boots"><img src="/landing/tausch/assets/boots.webp" alt="" width="900" height="521"></div>
+  <div class="obj obj--jersey"><img src="/landing/tausch/assets/jersey.webp" alt="" width="752" height="662"></div>
+  <div class="obj obj--guards"><img src="/landing/tausch/assets/guards.webp" alt="" width="900" height="1342"></div>
+</div>
+
+<div class="track" aria-hidden="true">
+  <div class="tl">Zu klein</div><div class="tr">Passt genau</div><div class="tfill"></div>
+  <img src="/landing/tausch/assets/boots.webp" alt="" width="900" height="521">
+  <img src="/landing/tausch/assets/jersey.webp" alt="" width="752" height="662">
+  <img src="/landing/tausch/assets/guards.webp" alt="" width="900" height="1342">
+</div>
+
+<main id="main">
+
+  <!-- 1 · Recognition. 50/50, both headlines at once. -->
+  <section class="hero" data-sc-act="pin" data-sc-span="1.5">
+    <div data-sc-stage>
+      <figure class="plate plate--l"><img src="/landing/tausch/assets/zu-klein.webp" alt="Flur mit Schuhbank, darauf ein gefaltetes grünes Trikot und eine Sporttasche" width="1400" height="1875" fetchpriority="high"></figure>
+      <figure class="plate plate--r"><img src="/landing/tausch/assets/passt-genau.webp" alt="Junger Spieler von hinten auf einer Bank am Spielfeldrand, er schnürt seine Fussballschuhe" width="1400" height="1875" fetchpriority="high"></figure>
+      <h1><span class="h-l">Zu klein.</span> <span class="h-r">Passt <em>genau.</em></span></h1>
+      <p class="hero-sub">Was im Flur liegen bleibt, sucht jemand anderes gerade. Die Tauschbörse von Amigoal bringt beides zusammen.</p>
+      <div class="hero-cta">
+        <a class="btn" href="/de/tausch">Zur Tauschbörse</a>
+        <small>Stöbern geht ohne Login</small>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2 · Relief. How it gets across. The boots cross here. -->
+  <section class="split how" data-sc-act="flow" id="schuhe" data-cross="0">
+    <div class="half half--l" data-sc-in data-sc-stagger="70">
+      <p class="tag">Wer abgibt</p>
+      <h2 class="h2">Foto, Grösse, Zustand. Fertig.</h2>
+      <p class="body">Ein Inserat braucht wenig: was es ist, wie gut es noch ist und wo man es abholen kann.</p>
+      <ul class="rows">
+        <li><b>Kategorie</b><span>Trikot, Schuhe, Schienbeinschoner, Torwart-Handschuhe, Hose, Stutzen, Tasche, Zubehör</span></li>
+        <li><b>Zustand</b><span>Neu, sehr gut, gut oder gebraucht</span></li>
+        <li><b>Fotos</b><span>Bis zu 5 pro Inserat</span></li>
+        <li><b>Abholort</b><span>PLZ und Kanton, damit es in der Nähe gefunden wird</span></li>
+      </ul>
+    </div>
+    <div class="half half--r" data-sc-in data-sc-stagger="70">
+      <p class="tag">Wer sucht</p>
+      <h2 class="h2">Grösse 34, in der Nähe.</h2>
+      <p class="body">Die Inserate lassen sich ohne Konto durchsehen und filtern. Wer etwas will, schickt eine Anfrage mit Nachricht und, beim Tausch, einem Gegenangebot.</p>
+      <ul class="rows">
+        <li><b>Filter</b><span>Kategorie, Suchbegriff, PLZ, Kanton</span></li>
+        <li><b>Anfrage</b><span>Nachricht und Gegenangebot an die Person, die inseriert hat</span></li>
+        <li><b>Antwort</b><span>Annehmen oder ablehnen, danach als abgeschlossen markieren</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- 3 · Curiosity. Five ways across, wiped in per side. The jersey crosses. -->
+  <section class="split ways" data-sc-act="flow" id="trikot" data-cross="1">
+    <div class="half half--l">
+      <div data-sc-reveal="right" data-sc-reveal-at="0.12 0.4">
+        <p class="sub">Ohne Geld:</p>
+        <ol>
+          <li><span class="n">01</span><div><h3>Tausch</h3><p>Mit einer Angabe, wogegen du tauschen möchtest.</p></div></li>
+          <li><span class="n">02</span><div><h3>Gratis</h3><p>Zum Verschenken, an wen es gerade braucht.</p></div></li>
+          <li><span class="n">03</span><div><h3>Spende</h3><p>Mit geschätztem Wert. Nach dem Abschluss lässt sich eine Spenden-Bescheinigung als PDF erstellen.</p></div></li>
+        </ol>
+      </div>
+    </div>
+    <div class="half half--r">
+      <div data-sc-reveal="left" data-sc-reveal-at="0.2 0.48">
+        <p class="sub">Mit Geld:</p>
+        <ol>
+          <li><span class="n">04</span><div><h3>Verkauf online</h3><p>Mit Karte oder TWINT über die Plattform (mit Plattform-Gebühr), oder direkt per TWINT an deine eigene Nummer, ohne Plattform-Gebühr.</p></div></li>
+          <li><span class="n">05</span><div><h3>Bargeld bei Abholung</h3><p>Preis im Inserat, bezahlt wird bei der Übergabe.</p></div></li>
+        </ol>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4 · Control. A real checkbox ticks: from club-only to all of Switzerland. -->
+  <section class="reach" data-sc-act="pin" data-sc-span="1.7" id="reichweite">
+    <div data-sc-stage>
+      <div class="half half--l">
+        <p class="tag">Im Verein</p>
+        <h2 class="h2">Zuerst sieht es nur dein Verein.</h2>
+        <p class="body">Vereinsmitglieder inserieren im Dashboard unter Kleider-Tauschbörse. Ohne weiteres Zutun bleibt ein Inserat vereinsintern.</p>
+        <ul class="rows scope">
+          <li><b>Sichtbar für</b><span>Mitglieder des eigenen Vereins</span></li>
+          <li><b>Inserieren</b><span>Spieler, Eltern, Trainer, Vorstand, Admins</span></li>
+        </ul>
+      </div>
+      <div class="half half--r">
+        <p class="tag">Oder schweizweit</p>
+        <h2 class="h2">Ein Häkchen, und die ganze Schweiz sucht mit.</h2>
+        <div class="form" role="group" aria-label="Beispiel aus dem Inserat-Formular">
+          <div class="form__head"><span>Schritt 3 von 3 · Fotos &amp; Veröffentlichen</span><em>Beispiel</em></div>
+          <label class="check"><input type="checkbox" id="cc" tabindex="-1" aria-describedby="cc-d"><div><b>Öffentlich schweizweit zeigen</b><span id="cc-d">Dein Inserat erscheint zusätzlich auf amigoal.ch/tausch und ist für alle sichtbar, auch ohne Vereinszugang.</span></div></label>
+          <div class="where">
+            <p>amigoal.ch/tausch · Filter nach Kanton</p>
+            <div class="cantons" id="cantons"><span>AG</span><span>AI</span><span>AR</span><span>BE</span><span>BL</span><span>BS</span><span>FR</span><span>GE</span><span>GL</span><span>GR</span><span>JU</span><span>LU</span><span>NE</span><span>NW</span><span>OW</span><span>SG</span><span>SH</span><span>SO</span><span>SZ</span><span>TG</span><span>TI</span><span>UR</span><span>VD</span><span>VS</span><span>ZG</span><span>ZH</span><span>FL</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5 · Belonging without a hurdle. Guests, no club, the club website. The shin guards cross. -->
+  <section class="split guest" data-sc-act="flow" id="schoner" data-cross="2">
+    <div class="half half--l" data-sc-in data-sc-stagger="70">
+      <p class="tag">Ohne Verein</p>
+      <h2 class="h2">Kein Konto? Als Gast inserieren.</h2>
+      <p class="body">Name, E-Mail, Inserat. Deine Gast-Inserate verwaltest du über einen Link, den du per E-Mail bekommst. Legst du später ein Konto an, werden sie automatisch verknüpft.</p>
+      <ul class="rows">
+        <li><b>Als Gast</b><span>Direkt auf <code>/de/tausch</code></span></li>
+        <li><b>Verwalten</b><span>Link anfordern auf <code>/de/tausch/meine</code></span></li>
+        <li><b>Mit Konto, ohne Verein</b><span>Deine Tauschartikel im persönlichen Bereich <code>/de/me</code></span></li>
+      </ul>
+    </div>
+    <div class="half half--r" data-sc-in data-sc-stagger="70">
+      <p class="tag">Für Vereine</p>
+      <h2 class="h2">Die Tauschbörse auf der Vereinswebsite.</h2>
+      <p class="body">Das Tausch-Widget zeigt auf der eigenen Website die Inserate des Vereins, die öffentlich geteilt wurden. Vereinsinterne Inserate bleiben intern.</p>
+      <figure class="embed">
+        <div class="embed__bar"><i></i><i></i><i></i><span>Vereinswebsite · Widget</span></div>
+        <ul>
+          <li><img src="/landing/tausch/assets/boots.webp" alt="" width="900" height="521" loading="lazy"><div>Fussballschuhe<small>Schuhe · Gr. 34 · Gut</small></div><em>Tausch</em></li>
+          <li><img src="/landing/tausch/assets/jersey.webp" alt="" width="752" height="662" loading="lazy"><div>Trikot<small>Trikot · Gr. 140 · Sehr gut</small></div><em>Gratis</em></li>
+          <li><img src="/landing/tausch/assets/guards.webp" alt="" width="900" height="1342" loading="lazy"><div>Schienbeinschoner<small>Schienbeinschoner · Gr. S · Gebraucht</small></div><em>Spende</em></li>
+        </ul>
+        <figcaption>Beispielinhalte</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <!-- 6 · Calm. Authored silence before the collapse. -->
+  <section class="split quiet" data-sc-act="flow">
+    <div class="half half--l"><div data-sc-reveal="right" data-sc-reveal-at="0.25 0.5"><p>Nach der Übergabe</p></div></div>
+    <div class="half half--r"><div data-sc-reveal="left" data-sc-reveal-at="0.32 0.56"><p>bewerten sich beide Seiten.<small>Eine Bewertung pro Inserat, danach nicht mehr änderbar. Wer mehr als 20 Bewertungen hat, gilt als verifiziert.</small></p></div></div>
+  </section>
+
+  <!-- 7 · Resolution (peak). The divider travels to the edge, "Passt genau" takes the page. -->
+  <section class="close" data-sc-act="pin" data-sc-span="2.8" id="passt">
+    <div data-sc-stage>
+      <p class="left-over">Links bleibt nichts liegen.</p>
+      <figure><img src="/landing/tausch/assets/platz.webp" alt="Junger Spieler in grün-weissen Fussballschuhen läuft von hinten gesehen auf einen Dorfsportplatz" width="2400" height="1357" loading="lazy"></figure>
+      <div class="close-scrim"></div>
+      <div class="close-copy" data-sc-cue="0.4" data-sc-rise="0">
+        <h2>Passt <em>genau.</em></h2>
+        <p>Trikots, Schuhe und Schoner, die woanders weiterspielen. Stöbern ohne Login, inserieren mit Konto oder als Gast.</p>
+        <a class="btn" href="/de/tausch">Zur Tauschbörse</a>
+        <div class="more">
+          <a class="link" href="/de/tausch/meine">Meine Gast-Inserate</a>
+          <a class="link" href="/de/login">Login für Vereinsmitglieder</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="foot">
+    <span>© 2026 Amigoal · Trifti GmbH, Spitzwiesenstrasse 1, 8957 Spreitenbach · UID CHE-490.435.667 MWST</span>
+    <nav aria-label="Rechtliches"><a href="/de/impressum">Impressum</a><a href="/de/datenschutz">Datenschutz</a><a href="/de/agb">AGB</a></nav>
+  </footer>
+
+</main>
+
+<script src="/landing/tausch/scrollcraft.js"></script>
+<script>
+ScrollCraft.mount(document.body);
+
+(function () {
+  var root = document.documentElement;
+  var reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var desk = matchMedia('(min-width: 901px)');
+  var fine = matchMedia('(hover: hover) and (pointer: fine)').matches;
+
+  function clamp(v) { return v < 0 ? 0 : v > 1 ? 1 : v; }
+  function ease(t) { return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; }
+
+  var closeAct = document.getElementById('passt');
+  var reach = document.getElementById('reichweite');
+  var cc = document.getElementById('cc');
+  var chips = [].slice.call(document.querySelectorAll('#cantons span'));
+  var stateEl = document.querySelector('.objects');
+  var notches = [].slice.call(document.querySelectorAll('.notch'));
+  var objs = [].slice.call(document.querySelectorAll('.obj'));
+  var trackImgs = [].slice.call(document.querySelectorAll('.track img'));
+  var markers = [0, 1, 2].map(function (i) { return document.querySelector('[data-cross="' + i + '"]'); });
+  // Resting heights of the three objects (fraction of the viewport), shared with the notches.
+  var Y = [0.34, 0.54, 0.74];
+  var ROT = [-6, 4, -3];
+
+  var mx = 0, my = 0, tmx = 0, tmy = 0;
+  if (!reduce && fine) addEventListener('pointermove', function (e) {
+    tmx = (e.clientX / innerWidth - 0.5) * 2; tmy = (e.clientY / innerHeight - 0.5) * 2;
+  }, { passive: true });
+  var hero = document.querySelector('.hero');
+
+  function actP(el) {
+    var r = el.getBoundingClientRect(), travel = Math.max(1, r.height - innerHeight);
+    return clamp(-r.top / travel);
+  }
+
+  var last = '';
+  function frame() {
+    var vw = innerWidth, vh = innerHeight;
+    mx += (tmx - mx) * 0.06; my += (tmy - my) * 0.06;
+    if (fine && !reduce) { hero.style.setProperty('--mx', mx.toFixed(3)); hero.style.setProperty('--my', my.toFixed(3)); }
+
+    // Collapse: the divider travels to the edge over the first 60% of the close.
+    var cp = actP(closeAct);
+    var k = reduce ? (cp > 0.12 ? 1 : 0) : ease(clamp((cp - 0.04) / 0.66));
+    var split = 0.5 * (1 - k);
+    root.style.setProperty('--split', split.toFixed(4));
+    root.style.setProperty('--k', k.toFixed(3));
+
+    var max = Math.max(1, document.documentElement.scrollHeight - vh);
+    var fill = clamp(scrollY / max);
+    root.style.setProperty('--fill', fill.toFixed(3));
+
+    // Signature: each object crosses while its section holds the middle of the screen.
+    var ts = markers.map(function (m) {
+      var r = m.getBoundingClientRect();
+      var t = clamp(((vh * 0.55 - r.top) / r.height - 0.18) / 0.5);
+      return reduce ? (t > 0.5 ? 1 : 0) : t;
+    });
+
+    if (desk.matches) {
+      var div = split * vw, off = Math.min(vw * 0.108, 200);
+      objs.forEach(function (o, i) {
+        var e = ease(ts[i]), arc = Math.sin(Math.PI * e);
+        var x = div + off * (2 * e - 1) + mx * (6 + i * 3);
+        var y = Y[i] * vh - arc * vh * 0.07 + my * (4 + i * 2);
+        var rot = ROT[i] * (1 - 2 * e) - arc * 12;
+        o.style.transform = 'translate3d(' + x.toFixed(1) + 'px,' + y.toFixed(1) + 'px,0) translate(-50%,-50%) rotate(' + rot.toFixed(2) + 'deg) scale(' + (1 + arc * 0.1).toFixed(3) + ')';
+        o.style.opacity = clamp(1 - (k - 0.35) * 2.2).toFixed(3);
+      });
+      notches.forEach(function (n, i) { n.classList.toggle('is-over', ts[i] >= 0.5); });
+    } else {
+      var tw = vw - 24;
+      trackImgs.forEach(function (im, i) {
+        var e = ease(ts[i]);
+        var x0 = 92 + i * 36, x1 = tw * 0.5 + 12 + i * 36;
+        var x = x0 + (x1 - x0) * e;
+        var y = -Math.sin(Math.PI * e) * 5;
+        im.style.transform = 'translate3d(' + x.toFixed(1) + 'px,calc(-50% + ' + y.toFixed(1) + 'px),0)';
+      });
+    }
+
+    // Act 4: the checkbox sets itself, then the cantons light up.
+    var rp = actP(reach);
+    var on = rp > 0.3;
+    if (cc.checked !== on) cc.checked = on;
+    var lit = on ? Math.round(clamp((rp - 0.36) / 0.44) * chips.length) : 0;
+    if (reduce && on) lit = chips.length;
+    chips.forEach(function (c, i) { var s = i < lit; if (c.classList.contains('on') !== s) c.classList.toggle('on', s); });
+
+    // Report the painted state for verification (rounded, not raw progress).
+    var st = [split.toFixed(3), Math.round(fill * 100), ts.map(function (t) { return t.toFixed(2); }).join(','), on ? 1 : 0, lit].join('|');
+    if (st !== last) { last = st; stateEl.setAttribute('data-sc-verify-state', st); }
+
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+
+  /* ---- Menu ---- */
+  var mb = document.getElementById('menu-btn'), mn = document.getElementById('menu');
+  function setMenu(open) {
+    mb.setAttribute('aria-expanded', open); mn.hidden = false;
+    requestAnimationFrame(function () { mn.classList.toggle('is-open', open); });
+    if (!open) setTimeout(function () { if (!mn.classList.contains('is-open')) mn.hidden = true; }, 220);
+    else { var f = mn.querySelector('a'); if (f) f.focus({ preventScroll: true }); }
+  }
+  mb.addEventListener('click', function () { setMenu(mb.getAttribute('aria-expanded') !== 'true'); });
+  addEventListener('keydown', function (e) { if (e.key === 'Escape' && mb.getAttribute('aria-expanded') === 'true') { setMenu(false); mb.focus(); } });
+  addEventListener('click', function (e) { if (mb.getAttribute('aria-expanded') === 'true' && !mn.contains(e.target) && !mb.contains(e.target)) setMenu(false); });
+})();
+</script>
+<script src="/landing/contact.js" defer></script>
+</body>
+</html>
