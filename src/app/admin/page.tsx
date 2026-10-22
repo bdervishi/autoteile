@@ -3,6 +3,7 @@ import { AdminStatistics } from "@/components/admin-statistics";
 import { LoginForm } from "@/components/login-form";
 import { databaseConfigured } from "@/lib/server/db";
 import { AdminOverview } from "@/components/admin-overview";
+import { AdminReadiness } from "@/components/admin-readiness";
 import { signOut } from "@/app/auth/actions";
 import { moderator } from "@/lib/server/admin";
 import { db } from "@/lib/server/db";
@@ -91,6 +92,7 @@ export default async function Admin() {
           <button className="button">Abmelden</button>
         </form>
       </div>
+      {actor.role === "admin" && <AdminReadiness />}
       {actor.role === "admin" && <AdminStatistics preview={false} />}
       <AdminOverview />
       {actor.role === "admin" && (

@@ -1,5 +1,7 @@
 # Teilebörse
 
+**Aktueller Stand und Go-live-Checkliste: [`docs/STATUS.md`](docs/STATUS.md).** Konfiguration prüfen mit `npm run check:launch`.
+
 Next.js 15.5.27, React 19, TypeScript strict, Tailwind, Supabase und serverseitige Aktionen. Schweizer Deutsch, CHF und Europe/Zurich.
 
 ## Lokal starten
@@ -19,9 +21,9 @@ Vorschau: http://127.0.0.1:3000. Ohne `.env.local` zeigt der Marktplatz sechs au
 4. Supabase Auth: Site URL und erlaubte Redirect URL `<APP_ORIGIN>/auth/callback` setzen. Eigenen SMTP-Versand auch für Supabase Auth konfigurieren. Registrierung ist derzeit passwortlos über einen E-Mail-Link.
 5. reCAPTCHA v3: Site-Key/Secret und `RECAPTCHA_HOSTNAME` genau auf den verwendeten Host setzen. Aktionen: `listing`, `upload`, `inquiry`, `report`, `wanted`, `magic-link`, `login`. Fehler, falscher Host, falsche Aktion und Score < 0.5 werden abgelehnt.
 6. SMTP-Daten setzen. IPv4-Auflösung, STARTTLS, Zertifikatsprüfung und begrenzte Timeouts sind implementiert. SPF, DKIM, DMARC und PTR richten sich nach dem Mailserver. Für Tests `EMAIL_RECIPIENT_ALLOWLIST` setzen; in Produktion leer lassen.
-7. Postal: JSON/processed-Payload, Zitatabtrennung und signierte Zustellung an `/api/inbound/reply` konfigurieren. `REPLY_DOMAIN` und MX für die Reply-Domain setzen. `POSTAL_JWKS_URL` muss eine vertrauenswürdige HTTPS-Adresse des eigenen Postal-Servers sein. Prüfer erwartet `X-Postal-Signature-256` und `X-Postal-Signature-KID`; kein SHA-1-Fallback. Anhänge werden nicht übernommen.
+7. Postal (optional; ohne Postal laufen Antworten über den persönlichen Verlauf im Web): JSON/processed-Payload, Zitatabtrennung und signierte Zustellung an `/api/inbound/reply` konfigurieren. `REPLY_DOMAIN` und MX für die Reply-Domain setzen. `POSTAL_JWKS_URL` muss eine vertrauenswürdige HTTPS-Adresse des eigenen Postal-Servers sein. Prüfer erwartet `X-Postal-Signature-256` und `X-Postal-Signature-KID`; kein SHA-1-Fallback. Anhänge werden nicht übernommen.
 8. Erstes Admin-Konto normal anmelden. Die Rolle dieses Kontos anschliessend einmalig in Supabase `profiles.role` auf `admin` setzen. Rollen werden niemals vom Browser übernommen.
-9. Vercel-Projekt mit diesem Ordner verbinden, sämtliche benötigten Variablen als Runtime-Variablen setzen. `vercel.json` enthält einen stündlichen Wartungsjob. Einen Vercel-Tarif verwenden, der stündliche Cron-Jobs zulässt. Der Job erwartet `Authorization: Bearer <CRON_SECRET>`.
+9. Vercel-Projekt mit diesem Ordner verbinden, sämtliche benötigten Variablen als Runtime-Variablen setzen. `vercel.json` enthält einen täglichen Wartungsjob (Vercel Hobby). Mails werden direkt nach jeder Aktion versendet; der Job arbeitet nur Wiederholungen, Gesuch-Treffer und Ablauf-Erinnerungen ab. Der Job erwartet `Authorization: Bearer <CRON_SECRET>`.
 10. Vor Deployment `npm test`, `npm run test:e2e` und `npm run build` ausführen. Vercel/Supabase sowie echte Mail- und Zahlungsintegration sind hier noch nicht eingerichtet oder abgenommen.
 
 ## Tests
@@ -47,6 +49,7 @@ Vitest verwendet für Migrationen und Transaktionen lokal PGlite/PostgreSQL. Nur
 - Schriftlicher Daten-/Routen-/Phasenplan: `docs/PLAN.md`.
 - SQL-Migrationen mit RLS deny-all, gesperrten Client-Grants und ausschliesslich serverseitigen Service-RPCs.
 - Marktplatz, Volltext-/Fahrzeug-/Reifen-/Preis-/Ort-Filter und Cursor mit 24 Inseraten; öffentliche Whitelist-DTOs; Detailgalerie, Product/Offer-JSON-LD und Sitemap.
+- Teilen: WhatsApp, Facebook, E-Mail, Link kopieren und natives Handy-Teilen auf jeder Inseratseite und direkt nach dem Veröffentlichen; Open-Graph-/Twitter-Vorschau mit erstem Foto, Preis und Ort.
 - Drei-Schritt-Wizard mit Kategorie-/Zustand-/Angebots-/Saison-Kacheln, bis zu fünf Fotos und mehreren Fahrzeugen. Backend prüft Gewerbezugehörigkeit. Stripe-Angebote bleiben gesperrt.
 - PLZ-Zuordnung aus dem offiziellen swisstopo-Ortschaftenverzeichnis für Schweiz und Liechtenstein. Mehrkantonige PLZ erfordern eine Auswahl; administrative PLZ ohne Ortschaftsdatensatz erlauben die ausdrückliche Kantonswahl. Bekannte Zuordnungen werden auch serverseitig geprüft.
 - Bild-Neukodierung, Metadatenentfernung, Pixel-/Format-/Grössenlimits; Klartext-Zod-Preprocessing, signierte Tokens, Honeypot, Captcha fail closed und atomare Postgres-Limits.
@@ -85,7 +88,7 @@ Postal-Referenzen: [HTTP-Payload](https://docs.postalserver.io/developer/http-pa
 
 PLZ-Daten: [Offizielles Ortschaftenverzeichnis von swisstopo](https://www.swisstopo.admin.ch/en/official-directory-of-towns-and-cities), CSV-Bezug am 3. Oktober 2026; lokal gespeichert in `src/data/postcodes.json`. Vor späterem Betrieb regelmässig aktualisieren.
 
-Lokaler Prüfstand: 38 Vitest-Tests, 16 Playwright-Tests (Desktop/Mobil) und Produktionsbuild bestanden. Lighthouse mobil gegen die lokale Produktionsvorschau: Performance 99/100; dies ersetzt keine Messung auf Vercel mit echten Daten. Der Demo-Modus ist absichtlich von der Indexierung ausgeschlossen.
+Lokaler Prüfstand (Stand 22. Oktober 2026): 48 Vitest-Tests, 24 Playwright-Tests (Desktop/Mobil) und Produktionsbuild bestanden. Lighthouse mobil gegen die lokale Produktionsvorschau: Performance 99/100; dies ersetzt keine Messung auf Vercel mit echten Daten. Der Demo-Modus ist absichtlich von der Indexierung ausgeschlossen.
 
 ## Scroll-Craft-Landingpage
 

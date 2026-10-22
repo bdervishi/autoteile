@@ -9,7 +9,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "check:launch": "node --env-file-if-exists=.env.local --experimental-strip-types --no-warnings scripts/check-launch.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.7.0",

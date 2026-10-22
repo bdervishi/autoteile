@@ -3,6 +3,7 @@ import { sealOutbox } from "@/lib/server/outbox-crypto";
 import { randomUUID } from "node:crypto";
 import { wantedSchema } from "@/lib/listing.schemas";
 import { db, databaseConfigured } from "@/lib/server/db";
+import { deliverOutboxSoon } from "@/lib/server/outbox";
 import { publicGuard } from "@/lib/server/guard";
 import { mailConfigured } from "@/lib/server/mail";
 import { issueToken, hashToken, verifyToken } from "@/lib/server/tokens";
@@ -66,6 +67,7 @@ export async function createWanted(
         ok: false,
         error: "Du kannst höchstens zehn offene Gesuch-Artikel haben.",
       };
+    deliverOutboxSoon();
     return {
       ok: true,
       data: {

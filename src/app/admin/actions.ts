@@ -1,5 +1,6 @@
 "use server";
 import { enqueueMatches } from "@/lib/server/matching";
+import { deliverOutboxSoon } from "@/lib/server/outbox";
 import { z } from "zod";
 import { moderator } from "@/lib/server/admin";
 import { db } from "@/lib/server/db";
@@ -43,6 +44,7 @@ export async function moderate(
     if (!data)
       return { ok: false, error: "Der Eintrag ist nicht mehr verfügbar." };
     await enqueueMatches();
+    deliverOutboxSoon();
     revalidatePath("/admin");
     revalidatePath("/teile");
     return { ok: true, data: { message: "Moderation gespeichert." } };

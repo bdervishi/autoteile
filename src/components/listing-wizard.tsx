@@ -23,6 +23,8 @@ import {
 import { CategoryIcon } from "./icons";
 import { Honeypot } from "./honeypot";
 import { captcha } from "./captcha";
+import { ShareButtons } from "./share-buttons";
+import Link from "next/link";
 import { createListing, uploadPhoto } from "@/app/teile/actions";
 import type { Fit } from "@/lib/listing.types";
 export function ListingWizard({
@@ -87,6 +89,7 @@ export function ListingWizard({
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState("");
+  const [published, setPublished] = useState({ id: "", title: "" });
   async function upload(files: FileList | null) {
     if (!files) return;
     if (photos.length + files.length > 5) {
@@ -180,8 +183,11 @@ export function ListingWizard({
         ag_hp_field: read("ag_hp_field"),
         captchaToken: await captcha("listing"),
       });
-      if (result.ok) setDone(result.data.message);
-      else setError(result.error);
+      if (result.ok) {
+        setDone(result.data.message);
+        if (result.data.published)
+          setPublished({ id: result.data.id, title: read("title") });
+      } else setError(result.error);
     } catch {
       setError(
         "Das Inserat konnte nicht gesendet werden. Bitte erneut versuchen.",
@@ -194,8 +200,20 @@ export function ListingWizard({
     return (
       <div className="panel">
         <Check size={36} />
-        <h2>Fast geschafft.</h2>
+        <h2>{published.id ? "Online." : "Fast geschafft."}</h2>
         <p>{done}</p>
+        {published.id && (
+          <>
+            <Link className="button primary" href={`/teile/${published.id}`}>
+              Inserat ansehen
+            </Link>
+            <ShareButtons
+              path={`/teile/${published.id}`}
+              title={published.title || "Mein Inserat"}
+              heading="Jetzt teilen und schneller abgeben"
+            />
+          </>
+        )}
       </div>
     );
   return (

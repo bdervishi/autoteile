@@ -1,8 +1,9 @@
 import { db, databaseConfigured } from "@/lib/server/db";
 import { validCron } from "@/lib/server/http-security";
-import { sendMail, mailConfigured } from "@/lib/server/mail";
+import { mailConfigured } from "@/lib/server/mail";
+import { deliverOutbox } from "@/lib/server/outbox";
 import { issueToken, hashToken } from "@/lib/server/tokens";
-import { sealOutbox, openOutbox } from "@/lib/server/outbox-crypto";
+import { sealOutbox } from "@/lib/server/outbox-crypto";
 export const runtime = "nodejs";
 export const maxDuration = 60;
 export async function GET(request: Request) {
@@ -39,57 +40,15 @@ export async function GET(request: Request) {
     p_origin: process.env.APP_ORIGIN,
   });
   if (matchError) return new Response("Matching failed", { status: 503 });
-  const { data: batch, error } = await database.rpc("claim_outbox", {
-    p_limit: 5,
-  });
-  if (error) return new Response("Queue unavailable", { status: 503 });
+  // Daily on Vercel Hobby: drain the backlog (retries, matches, reminders) in several leased batches.
   let sent = 0;
   let failed = 0;
-  await Promise.all(
-    (batch || []).map(async (row: Record<string, any>) => {
-      try {
-        await sendMail({
-          recipient: row.recipient,
-          subject: row.subject,
-          body: openOutbox(row.body),
-          reply_to: row.reply_to,
-        });
-        const { error: updateError } = await database
-          .from("email_outbox")
-          .update({
-            sent_at: new Date().toISOString(),
-            locked_until: null,
-            lease_id: null,
-            last_error: null,
-          })
-          .eq("id", row.id)
-          .eq("lease_id", row.lease_id);
-        if (updateError) throw updateError;
-        if (row.dedupe_key.startsWith("wanted-match:")) {
-          const [, wantedId, itemId] = row.dedupe_key.split(":");
-          await database
-            .from("parts_wanted_matches")
-            .update({ notified_at: new Date().toISOString() })
-            .eq("wanted_id", wantedId)
-            .eq("item_id", itemId);
-        }
-        sent++;
-      } catch {
-        await database
-          .from("email_outbox")
-          .update({
-            available_at: new Date(
-              Date.now() + Math.min(3600, 60 * 2 ** row.attempts) * 1000,
-            ).toISOString(),
-            locked_until: null,
-            lease_id: null,
-            last_error: "Delivery failed",
-          })
-          .eq("id", row.id)
-          .eq("lease_id", row.lease_id);
-        failed++;
-      }
-    }),
-  );
+  for (let round = 0; round < 5; round++) {
+    const result = await deliverOutbox(20);
+    if (!result) return new Response("Queue unavailable", { status: 503 });
+    sent += result.sent;
+    failed += result.failed;
+    if (result.sent + result.failed < 20) break;
+  }
   return Response.json({ sent, failed });
 }

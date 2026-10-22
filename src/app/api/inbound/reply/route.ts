@@ -1,4 +1,5 @@
 import { db, databaseConfigured } from "@/lib/server/db";
+import { deliverOutboxSoon } from "@/lib/server/outbox";
 import {
   inboundSchema,
   inboundSender,
@@ -63,6 +64,7 @@ export async function POST(request: Request) {
       p_body: body,
     });
     if (error) throw error;
+    if (data) deliverOutboxSoon();
     return new Response(data ? "OK" : "Ignored");
   } catch {
     console.error("Inbound reply processing failed");

@@ -13,6 +13,7 @@ import {
 import { Gallery } from "@/components/gallery";
 import { InquiryForm } from "@/components/inquiry-form";
 import { ReportForm } from "@/components/report-form";
+import { ShareButtons } from "@/components/share-buttons";
 export const dynamic = "force-dynamic";
 export async function generateMetadata({
   params,
@@ -21,11 +22,40 @@ export async function generateMetadata({
 }) {
   const { id } = await params;
   const item = await getItem(id);
+  if (!item)
+    return {
+      title: "Inserat nicht gefunden",
+      robots: { index: false, follow: true },
+    };
+  const title = `${item.title} · ${item.price_chf ? chf(item.price_chf) : item.offer_type === "gratis" ? "Gratis" : "Tausch"}`;
+  const description =
+    `${item.pickup_zip} ${item.pickup_canton} · ${item.description}`.slice(
+      0,
+      160,
+    );
+  const images = item.photos
+    .slice(0, 1)
+    .map((url) => ({ url, alt: item.title }));
+  // Link-Vorschau für WhatsApp, Facebook & Co. mit dem ersten Foto des Inserats.
   return {
-    title: item
-      ? `${item.title} · ${item.price_chf ? chf(item.price_chf) : item.offer_type === "gratis" ? "Gratis" : "Tausch"}`
-      : "Inserat nicht gefunden",
-    description: item?.description.slice(0, 160),
+    title,
+    description,
+    alternates: { canonical: `/teile/${item.id}` },
+    openGraph: {
+      type: "website",
+      locale: "de_CH",
+      siteName: BRAND_NAME,
+      url: `/teile/${item.id}`,
+      title,
+      description,
+      ...(images.length ? { images } : {}),
+    },
+    twitter: {
+      card: images.length ? "summary_large_image" : "summary",
+      title,
+      description,
+      ...(images.length ? { images: images.map((image) => image.url) } : {}),
+    },
     robots: { index: databaseConfigured(), follow: true },
   };
 }
@@ -189,6 +219,7 @@ export default async function Detail({
             </div>
           )}
           <InquiryForm item={item} />
+          <ShareButtons path={`/teile/${item.id}`} title={item.title} />
         </div>
       </div>
     </main>

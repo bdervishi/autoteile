@@ -5,6 +5,7 @@ import { db, databaseConfigured } from "@/lib/server/db";
 import { tradeAccess } from "@/lib/server/trade-access";
 import { verifyToken, hashToken } from "@/lib/server/tokens";
 import { rateLimit } from "@/lib/server/guard";
+import { deliverOutboxSoon } from "@/lib/server/outbox";
 import { revalidatePath } from "next/cache";
 import type { Result } from "@/lib/listing.types";
 export async function writeMessage(
@@ -35,6 +36,7 @@ export async function writeMessage(
     });
     if (error) throw error;
     if (!data) return { ok: false, error: "Diese Anfrage ist abgeschlossen." };
+    deliverOutboxSoon();
     revalidatePath(`/teile/anfrage/${token}`);
     return { ok: true, data: { message: "Nachricht gesendet." } };
   } catch {
@@ -71,6 +73,7 @@ export async function changeTradeStatus(
         error:
           "Der Status hat sich inzwischen geändert. Bitte die Seite neu laden.",
       };
+    deliverOutboxSoon();
     revalidatePath("/teile");
     revalidatePath(`/teile/anfrage/${token}`);
     return { ok: true, data: { message: "Status aktualisiert." } };
@@ -95,6 +98,7 @@ export async function releaseTwint(
     if (error) throw error;
     if (!data)
       return { ok: false, error: "Diese Freigabe ist nicht mehr möglich." };
+    deliverOutboxSoon();
     revalidatePath("/teile");
     return {
       ok: true,

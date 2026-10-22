@@ -8,6 +8,7 @@ import { currentUser } from "@/lib/server/auth";
 import { publicGuard, clientIpHash, rateLimit } from "@/lib/server/guard";
 import { issueToken, hashToken, replyAddress } from "@/lib/server/tokens";
 import { mailConfigured } from "@/lib/server/mail";
+import { deliverOutboxSoon } from "@/lib/server/outbox";
 import type { Result } from "@/lib/listing.types";
 export async function sendInquiry(
   input: unknown,
@@ -18,7 +19,7 @@ export async function sendInquiry(
       ok: false,
       error: "Bitte Name, E-Mail-Adresse und Nachricht prüfen.",
     };
-  if (!databaseConfigured() || !mailConfigured() || !process.env.REPLY_DOMAIN)
+  if (!databaseConfigured() || !mailConfigured())
     return {
       ok: false,
       error:
@@ -82,6 +83,11 @@ export async function sendInquiry(
     const ownerToken = issueToken(id, "trade-owner");
     const twintToken = issueToken(id, "twint-release", 30 * 86400);
     const { captchaToken, ag_hp_field, ...fields } = data;
+    // Without Postal (REPLY_DOMAIN) replies by mail cannot be routed; the web conversation still works.
+    const replyDomain = process.env.REPLY_DOMAIN;
+    const replyHint = replyDomain
+      ? ""
+      : "\n\nBitte nicht auf diese E-Mail antworten. Schreibe über den Link oben.";
     const { error } = await db().rpc("create_inquiry", {
       p_trade: {
         ...fields,
@@ -121,18 +127,18 @@ export async function sendInquiry(
           recipient: ownerEmail,
           subject: `${data.twint_requested ? "TWINT-Kaufanfrage" : "Neue Anfrage"} zu ${item.title}`,
           body: sealOutbox(
-            `${data.requester_name} schreibt:\n${data.message}\n\nAnfrage öffnen:\n${process.env.APP_ORIGIN}/teile/anfrage/${ownerToken}${data.twint_requested ? `\n\nTWINT-Nummer freigeben:\n${process.env.APP_ORIGIN}/teile/twint-freigabe/${twintToken}` : ""}`,
+            `${data.requester_name} schreibt:\n${data.message}\n\nAnfrage öffnen:\n${process.env.APP_ORIGIN}/teile/anfrage/${ownerToken}${data.twint_requested ? `\n\nTWINT-Nummer freigeben:\n${process.env.APP_ORIGIN}/teile/twint-freigabe/${twintToken}` : ""}${replyHint}`,
           ),
-          reply_to: replyAddress(id, "o", process.env.REPLY_DOMAIN!),
+          reply_to: replyDomain ? replyAddress(id, "o", replyDomain) : null,
         },
         {
           dedupe_key: `inquiry:${id}:requester`,
           recipient: email,
           subject: "Deine Anfrage ist unterwegs",
           body: sealOutbox(
-            `Deine Anfrage zu «${item.title}» wurde gesendet.\n\nDein persönlicher Verlauf:\n${process.env.APP_ORIGIN}/teile/anfrage/${requesterToken}`,
+            `Deine Anfrage zu «${item.title}» wurde gesendet.\n\nDein persönlicher Verlauf:\n${process.env.APP_ORIGIN}/teile/anfrage/${requesterToken}${replyHint}`,
           ),
-          reply_to: replyAddress(id, "r", process.env.REPLY_DOMAIN!),
+          reply_to: replyDomain ? replyAddress(id, "r", replyDomain) : null,
         },
       ],
     });
@@ -144,6 +150,7 @@ export async function sendInquiry(
         };
       throw error;
     }
+    deliverOutboxSoon();
     return {
       ok: true,
       data: {

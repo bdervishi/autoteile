@@ -1942,3 +1942,42 @@ html:not(.sc-ready) .landing-page [data-sc-cue] {
     width: 124px;
   }
 }
+.share {
+  margin: 25px 0;
+}
+.share h3 {
+  font-size: 15px;
+  margin-bottom: 10px;
+}
+.share-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.share-buttons .button {
+  cursor: pointer;
+}
+.admin-readiness ul {
+  list-style: none;
+  padding: 0;
+  margin: 12px 0 0;
+  display: grid;
+  gap: 10px;
+}
+.admin-readiness li {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+.admin-readiness li svg {
+  flex: none;
+  margin-top: 3px;
+}
+.admin-readiness b {
+  display: block;
+  font-size: 14px;
+}
+.admin-readiness small {
+  display: block;
+  color: #67717b;
+}

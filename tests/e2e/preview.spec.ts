@@ -92,6 +92,28 @@ test("detail and wanted routes render and six wanted articles cannot be added", 
   ).toBeVisible();
 });
 
+test("detail page can be shared with a link preview", async ({ page }) => {
+  await page.goto("/teile/00000000-0000-4000-8000-000000000001", {
+    waitUntil: "domcontentloaded",
+  });
+  await expect(
+    page.getByRole("heading", { name: "Inserat teilen" }),
+  ).toBeVisible();
+  const whatsapp = page.getByRole("link", { name: "WhatsApp" });
+  await expect(whatsapp).toHaveAttribute(
+    "href",
+    /^https:\/\/wa\.me\/\?text=.*%2Fteile%2F00000000-0000-4000-8000-000000000001/,
+  );
+  await expect(page.locator('meta[property="og:title"]')).toHaveAttribute(
+    "content",
+    /.+/,
+  );
+  await expect(page.locator('meta[property="og:url"]')).toHaveAttribute(
+    "content",
+    /\/teile\/00000000-0000-4000-8000-000000000001$/,
+  );
+});
+
 test("landing tire selection carries into the real search", async ({
   page,
 }) => {

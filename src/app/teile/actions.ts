@@ -11,10 +11,11 @@ import { publicGuard, clientIpHash, rateLimit } from "@/lib/server/guard";
 import { sanitiseImage, ownPhotoUrl } from "@/lib/server/images";
 import { issueToken, hashToken, verifyToken } from "@/lib/server/tokens";
 import { mailConfigured } from "@/lib/server/mail";
+import { deliverOutboxSoon } from "@/lib/server/outbox";
 import type { Result } from "@/lib/listing.types";
 export async function createListing(
   input: unknown,
-): Promise<Result<{ message: string }>> {
+): Promise<Result<{ message: string; id: string; published: boolean }>> {
   const parsed = listingSchema.safeParse(input);
   if (!parsed.success)
     return { ok: false, error: parsed.error.issues[0].message };
@@ -138,8 +139,9 @@ export async function createListing(
     });
     if (error) throw error;
     await enqueueMatches();
+    deliverOutboxSoon();
     revalidatePath("/teile");
-    return { ok: true, data: { message } };
+    return { ok: true, data: { message, id, published: !!user } };
   } catch (error) {
     console.error(
       "createListing failed",
@@ -188,7 +190,7 @@ export async function uploadPhoto(
 }
 export async function confirmListing(
   token: string,
-): Promise<Result<{ message: string }>> {
+): Promise<Result<{ message: string; id: string }>> {
   const verified = verifyToken(token, "listing-confirm");
   if (!verified || !databaseConfigured())
     return { ok: false, error: "Dieser Link ist ungültig oder abgelaufen." };
@@ -204,10 +206,14 @@ export async function confirmListing(
         error: "Dieser Link ist ungültig oder wurde bereits verwendet.",
       };
     await enqueueMatches();
+    deliverOutboxSoon();
     revalidatePath("/teile");
     return {
       ok: true,
-      data: { message: "Dein Inserat ist jetzt veröffentlicht." },
+      data: {
+        message: "Dein Inserat ist jetzt veröffentlicht.",
+        id: verified.subject,
+      },
     };
   } catch {
     return { ok: false, error: "Die Bestätigung ist derzeit nicht möglich." };
@@ -270,6 +276,7 @@ export async function requestManagementLink(input: {
         },
       });
       if (rpcError) throw rpcError;
+      deliverOutboxSoon();
     }
     return {
       ok: true,
