@@ -10,11 +10,13 @@ Stand: 22. Oktober 2026. Kurzüberblick, was vorhanden ist und was für Inserate
 | Teilen von Inseraten (WhatsApp, Facebook, E-Mail, Link, Handy-Teilen, Link-Vorschau mit Foto) | ✅ fertig |
 | Anfragen an Verkäufer | ✅ fertig, läuft auch ohne eigenen Mailserver |
 | Mailversand | ✅ sofort nach jeder Aktion; täglicher Cron fängt Wiederholungen auf |
-| **Infrastruktur (Supabase, SMTP, reCAPTCHA, Vercel, Domain)** | ❌ **nicht eingerichtet: blockiert den Live-Betrieb** |
+| Supabase und Vercel | ✅ angelegt und verbunden (laut Betreiber, 22.10.). Migrationen mit `supabase/check-setup.sql` bestätigen |
+| **SMTP, reCAPTCHA, Secrets, Domain** | ❌ **noch offen: blockiert Gast-Inserate** |
+| Neuer Code (Sofort-Mails, Teilen, Status) | ⚠️ liegt auf Branch `claude/cool-shannon-box7vk`, noch nicht in `main` und damit nicht live |
 | Rechtstexte (AGB, Datenschutz, Impressum) | ⚠️ nur Platzhalter; vor öffentlichem Start freigeben |
 | Online-Zahlung (Stripe) | ⏸️ bewusst deaktiviert; TWINT-Direkt funktioniert |
 
-**Ohne die Infrastruktur nimmt die Seite keine Inserate an.** Sie zeigt dann nur Beispielinserate und eine ehrliche Meldung «noch nicht eingerichtet». Fortschritt prüfen:
+**Ohne SMTP und reCAPTCHA nimmt die Seite keine Gast-Inserate an.** Sie zeigt dann nur Beispielinserate und eine ehrliche Meldung «noch nicht eingerichtet». Fortschritt prüfen:
 
 ```sh
 npm run check:launch        # liest .env.local, zeigt OK / FEHLT / OFFEN
@@ -27,15 +29,15 @@ Nach dem Deployment zeigt `/admin` (Adminrolle) denselben Systemstatus und die E
 Reihenfolge einhalten. Jeder Punkt ist mit `npm run check:launch` überprüfbar.
 
 1. **Domain festlegen** (z. B. `partvivo.ch`). Daraus folgen `APP_ORIGIN=https://partvivo.ch`, `BRAND_DOMAIN=partvivo.ch` und `RECAPTCHA_HOSTNAME=partvivo.ch`.
-2. **Supabase-Projekt** in der EU-Region (z. B. Zürich/Frankfurt) anlegen.
-   - Alle Dateien aus `supabase/migrations/` in Namensreihenfolge im SQL-Editor ausführen.
-   - URL, Anon-Key und Service-Role-Key notieren.
+2. **Supabase-Projekt** ✅ vorhanden. Noch bestätigen:
+   - `supabase/check-setup.sql` im SQL-Editor ausführen (nur lesend). Alle Zeilen ausser «Admin-Konto gesetzt» müssen `ok = true` zeigen. Fehlen Tabellen oder Funktionen, die fehlenden Dateien aus `supabase/migrations/` in Namensreihenfolge ausführen.
+   - URL, Anon-Key und Service-Role-Key in Vercel eingetragen (Service-Role ohne `NEXT_PUBLIC_`).
    - Auth → URL-Konfiguration: Site URL = `APP_ORIGIN`, Redirect `APP_ORIGIN/auth/callback`.
    - Auth → SMTP: denselben SMTP-Zugang wie unten eintragen (der eingebaute Supabase-Versand ist auf wenige Mails pro Stunde begrenzt).
 3. **SMTP-Zugang** (z. B. Infomaniak, Brevo, Postmark) mit Absender auf der eigenen Domain. SPF, DKIM und DMARC im DNS setzen, sonst landen Bestätigungsmails im Spam.
 4. **reCAPTCHA v3** unter google.com/recaptcha/admin für die Domain anlegen. Ohne reCAPTCHA lehnt die Seite Gast-Inserate, Foto-Uploads und Anfragen ab.
 5. **Secrets erzeugen**: `TOKEN_SECRET`, `IP_HASH_SECRET` und `CRON_SECRET` je mit `openssl rand -hex 32`.
-6. **Vercel**: Repository verbinden, alle Variablen aus `.env.example` als Production-Variablen setzen, Domain verbinden. `EMAIL_RECIPIENT_ALLOWLIST` leer lassen, Stripe-Variablen leer lassen.
+6. **Vercel** ✅ verbunden. Noch: Branch `claude/cool-shannon-box7vk` nach `main` mergen. Alle Variablen aus `.env.example` als Production-Variablen setzen, Domain verbinden. `EMAIL_RECIPIENT_ALLOWLIST` leer lassen, Stripe-Variablen leer lassen.
 7. **Admin-Konto**: unter `/admin` anmelden, dann in Supabase `profiles.role` für dieses Konto auf `admin` setzen.
 8. **Rechtstexte** unter `/impressum`, `/datenschutz` und `/agb` mit echten Betreiberangaben ersetzen.
 9. **Live-Test** (unten) durchführen.

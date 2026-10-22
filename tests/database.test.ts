@@ -23,6 +23,16 @@ afterAll(async () => {
 const itemId = "11111111-1111-4111-8111-111111111111";
 const tradeId = "22222222-2222-4222-8222-222222222222";
 describe("PostgreSQL migrations and transactions", () => {
+  it("go-live check script passes on fully migrated schema", async () => {
+    const { rows } = await pg.query<{ pruefung: string; ok: boolean }>(
+      readFileSync("supabase/check-setup.sql", "utf8"),
+    );
+    expect(rows).toHaveLength(9);
+    // Only the operator-assigned admin role is missing in a fresh schema.
+    expect(rows.filter((r) => !r.ok).map((r) => r.pruefung)).toEqual([
+      "Admin-Konto gesetzt",
+    ]);
+  });
   it("denies anon and authenticated reads and function execution", async () => {
     for (const role of ["anon", "authenticated"]) {
       await pg.exec(`set role ${role}`);
